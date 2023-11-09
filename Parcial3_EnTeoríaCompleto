@@ -1,0 +1,81 @@
+#include <stdio.h>
+
+int customStrlen(const char *str) {
+    int length = 0;
+    while (str[length] != '\0') {
+        length++;
+    }
+    return length;
+}
+
+#define MAX_ROWS 3000
+#define MAX_COLS 3000
+#define MAX_WORD_LENGTH 50
+
+int main() {
+    FILE *archivo = fopen("emails.csv", "r");
+    if (!archivo) {
+        perror("Error al abrir el archivo");
+        return 1;
+    }
+
+    int matriz[MAX_ROWS][MAX_COLS];
+    char palabras[MAX_ROWS][MAX_WORD_LENGTH];
+    char linea[3000];
+
+    int fila = 0;
+    while (fgets(linea, sizeof(linea), archivo) != NULL && fila < MAX_ROWS) {
+        int col = 0;
+        char *token = linea;
+        int len = customStrlen(token);
+        if (len > 0 && token[len - 1] == '\n') {
+            token[len - 1] = '\0';
+        }
+
+        for (int i = 0; i < len && i < MAX_WORD_LENGTH - 1; ++i) {
+            palabras[fila][i] = token[i];
+        }
+
+        palabras[fila][len < MAX_WORD_LENGTH - 1 ? len : MAX_WORD_LENGTH - 1] = '\0';
+
+        token += len + 1;
+
+        while (*token != '\0' && col < MAX_COLS) {
+            char *end = token;
+            while (*end != ',' && *end != '\n' && *end != '\0') {
+                end++;
+            }
+
+            sscanf(token, "%d", &matriz[fila][col]);
+
+            if (*end == ',') {
+                token = end + 1;
+            } else {
+                break;
+            }
+
+            col++;
+        }
+        fila++;
+    }
+
+    fclose(archivo);
+
+    FILE *outputFile = fopen("182073.txt", "w");
+    if (!outputFile) {
+        perror("Error al abrir el archivo de salida");
+        return 1;
+    }
+
+    for (int i = 73; i <= 123 && i < fila; ++i) {
+        int sumaFila = 0;
+        for (int j = 0; j < MAX_COLS; ++j) {
+            sumaFila += matriz[i][j];
+        }
+        fprintf(outputFile, "%s:%d\n", palabras[i], sumaFila);
+    }
+
+    fclose(outputFile);
+
+    return 0;
+}
